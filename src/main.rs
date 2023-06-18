@@ -3,6 +3,7 @@ use std::net::SocketAddr;
 use axum::{routing::get, Extension, Router};
 use sea_orm::DatabaseConnection;
 use tower_http::cors::{Any, CorsLayer};
+use tracing_subscriber;
 
 use crate::handlers::*;
 use graphql::{build_graphql_schema, graphiql_handler, graphql_handler};
@@ -20,6 +21,11 @@ pub struct AppState {
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
+
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_test_writer()
+        .init();
 
     let connection_string = std::env::var("DATABASE_URL").expect("DATABASE_URL is required");
 

@@ -56,15 +56,7 @@ pub struct UserQueries;
 impl UserQueries {
     pub async fn user_list(&self, ctx: &Context<'_>) -> Result<Vec<user::Model>, DbErr> {
         let app = ctx.data_unchecked::<AppState>();
-
-        let users = user::Entity::find()
-            .limit(10)
-            .all(&app.db)
-            .await?
-            .into_iter()
-            .map(|u| u.into())
-            .collect();
-
+        let users = user::Entity::find().limit(10).all(&app.db).await?;
         Ok(users)
     }
 }
