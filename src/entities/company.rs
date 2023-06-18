@@ -5,7 +5,7 @@ use serde::Serialize;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, SimpleObject)]
 #[sea_orm(table_name = "company")]
-#[graphql(name = "Company")]
+#[graphql(name = "Company", complex)]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,

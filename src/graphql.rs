@@ -7,8 +7,9 @@ use axum::{
     Extension,
 };
 
-use self::schema::{CompanyLoader, UserQueries};
 use crate::AppState;
+use schema::company::*;
+use schema::user::*;
 
 mod schema;
 
@@ -17,11 +18,12 @@ pub struct BaseQueries;
 
 #[Object]
 impl BaseQueries {
-    pub async fn hello(&self) -> String {
-        String::from("Hello!")
+    pub async fn world(&self) -> String {
+        "world".to_owned()
     }
 }
 
+#[derive(Default)]
 pub struct MutationRoot;
 
 #[Object]
@@ -39,9 +41,11 @@ pub type SeshtrackerSchema = Schema<Query, MutationRoot, EmptySubscription>;
 pub fn build_graphql_schema(app_state: AppState) -> SeshtrackerSchema {
     Schema::build(Query::default(), MutationRoot, EmptySubscription)
         .data(DataLoader::new(
-            CompanyLoader {
-                app_state: app_state.clone(),
-            },
+            BatchCompanyById(app_state.clone()),
+            tokio::spawn,
+        ))
+        .data(DataLoader::new(
+            BatchUsersByCompanyId(app_state.clone()),
             tokio::spawn,
         ))
         .data(app_state)
