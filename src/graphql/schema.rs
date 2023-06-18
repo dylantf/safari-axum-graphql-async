@@ -4,7 +4,6 @@ use async_graphql::{
     dataloader::{DataLoader, Loader},
     *,
 };
-// use chrono::{DateTime, Utc};
 use sea_orm::*;
 
 use crate::{
@@ -34,18 +33,15 @@ impl Loader<i64> for CompanyLoader {
     type Error = FieldError;
 
     async fn load(&self, company_ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
-        let results = company::Entity::find()
+        let companies = company::Entity::find()
             .filter(company::Column::Id.is_in(company_ids.to_owned()))
             .all(&self.app_state.db)
-            .await
-            .unwrap();
+            .await?
+            .into_iter()
+            .map(|c| (c.id, c))
+            .collect::<HashMap<i64, Self::Value>>();
 
-        let mut ret: HashMap<i64, Self::Value> = HashMap::new();
-        for r in results {
-            ret.insert(r.id, r);
-        }
-
-        Ok(ret)
+        Ok(companies)
     }
 }
 
