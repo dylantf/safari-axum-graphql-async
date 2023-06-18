@@ -36,9 +36,9 @@ impl MutationRoot {
 #[derive(Default, MergedObject)]
 pub struct Query(BaseQueries, UserQueries);
 
-pub type SeshtrackerSchema = Schema<Query, MutationRoot, EmptySubscription>;
+pub type SafariSchema = Schema<Query, MutationRoot, EmptySubscription>;
 
-pub fn build_graphql_schema(app_state: AppState) -> SeshtrackerSchema {
+pub fn build_graphql_schema(app_state: AppState) -> SafariSchema {
     Schema::build(Query::default(), MutationRoot, EmptySubscription)
         .data(DataLoader::new(
             BatchCompanyById(app_state.clone()),
@@ -53,7 +53,7 @@ pub fn build_graphql_schema(app_state: AppState) -> SeshtrackerSchema {
 }
 
 pub async fn graphql_handler(
-    schema: Extension<SeshtrackerSchema>,
+    schema: Extension<SafariSchema>,
     request: GraphQLRequest,
 ) -> GraphQLResponse {
     schema.execute(request.into_inner()).await.into()
