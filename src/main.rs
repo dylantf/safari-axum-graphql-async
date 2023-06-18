@@ -4,11 +4,13 @@ use axum::{routing::get, Extension, Router};
 use sea_orm::DatabaseConnection;
 use tower_http::cors::{Any, CorsLayer};
 
+use crate::handlers::*;
 use graphql::{build_graphql_schema, graphiql_handler, graphql_handler};
 
 mod database;
 mod entities;
 mod graphql;
+mod handlers;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -34,8 +36,9 @@ async fn main() {
     let app = Router::new()
         .route("/api/healthcheck", get(|| async { "alive!" }))
         .route("/api/graphql", get(graphiql_handler).post(graphql_handler))
+        .route("/api/users", get(user_list_handler))
         .layer(Extension(schema))
-        .layer(Extension(app_state))
+        .with_state(app_state)
         .layer(cors);
 
     let addr: SocketAddr = "127.0.0.1:4000".parse().unwrap();
