@@ -1,24 +1,20 @@
 use std::collections::HashMap;
 
-use async_graphql::{
-    dataloader::{DataLoader, Loader},
-    *,
-};
+use async_graphql::dataloader::*;
+use async_graphql::*;
 use sea_orm::*;
 
 use crate::{
     entities::{company, user},
+    graphql::schema::user::BatchUsersByCompanyId,
     AppState,
 };
-
-use super::user::BatchUsersByCompanyId;
 
 #[ComplexObject]
 impl company::Model {
     pub async fn users(&self, ctx: &Context<'_>) -> Result<Vec<user::Model>, async_graphql::Error> {
         let loader = ctx.data_unchecked::<DataLoader<BatchUsersByCompanyId>>();
-        let result = loader.load_one(self.id).await;
-        match result {
+        match loader.load_one(self.id).await {
             Ok(Some(users)) => Ok(users),
             _ => Ok(vec![]),
         }

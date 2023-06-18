@@ -1,9 +1,7 @@
 use std::collections::HashMap;
 
-use async_graphql::{
-    dataloader::{DataLoader, Loader},
-    *,
-};
+use async_graphql::dataloader::*;
+use async_graphql::*;
 use sea_orm::*;
 
 use crate::{

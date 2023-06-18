@@ -1,5 +1,5 @@
 use async_graphql::SimpleObject;
-// use chrono::{DateTime, Utc};
+use chrono::NaiveDateTime;
 use sea_orm::entity::prelude::*;
 use serde::Serialize;
 
@@ -14,8 +14,8 @@ pub struct Model {
     #[sea_orm(column_type = "Text", unique)]
     pub username: String,
     pub company_id: i64,
-    // pub created_at: DateTime<Utc>,
-    // pub updated_at: DateTime<Utc>,
+    pub inserted_at: NaiveDateTime,
+    pub updated_at: Option<NaiveDateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
