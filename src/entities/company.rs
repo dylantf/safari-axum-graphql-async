@@ -1,9 +1,11 @@
+use async_graphql::SimpleObject;
 // use chrono::{DateTime, Utc};
 use sea_orm::entity::prelude::*;
 use serde::Serialize;
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, SimpleObject)]
 #[sea_orm(table_name = "company")]
+#[graphql(name = "Company")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
