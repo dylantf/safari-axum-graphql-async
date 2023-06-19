@@ -34,7 +34,7 @@ impl MutationRoot {
 }
 
 #[derive(Default, MergedObject)]
-pub struct Query(BaseQueries, UserQueries);
+pub struct Query(BaseQueries, UserQueries, CompanyQueries);
 
 pub type SafariSchema = Schema<Query, MutationRoot, EmptySubscription>;
 

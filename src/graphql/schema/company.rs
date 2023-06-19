@@ -21,6 +21,21 @@ impl company::Model {
     }
 }
 
+#[derive(Default)]
+pub struct CompanyQueries;
+
+#[Object]
+impl CompanyQueries {
+    pub async fn company_list(
+        &self,
+        ctx: &Context<'_>,
+    ) -> Result<Vec<company::Model>, async_graphql::Error> {
+        let app = ctx.data_unchecked::<AppState>();
+        let companies = company::Entity::find().limit(10).all(&app.db).await?;
+        Ok(companies)
+    }
+}
+
 pub struct BatchCompanyById(pub AppState);
 
 #[async_trait::async_trait]

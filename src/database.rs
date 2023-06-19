@@ -3,7 +3,7 @@ use std::time::Duration;
 
 pub async fn connect_to_database(connection_string: &str) -> Result<DatabaseConnection, DbErr> {
     let mut opt = ConnectOptions::new(connection_string.to_owned());
-    opt.max_connections(20)
+    opt.max_connections(10)
         .min_connections(5)
         .connect_timeout(Duration::from_secs(8))
         .acquire_timeout(Duration::from_secs(8))
