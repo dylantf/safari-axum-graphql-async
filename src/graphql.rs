@@ -6,8 +6,8 @@ use axum::{
     response::{self, IntoResponse},
     Extension,
 };
+use sea_orm::DatabaseConnection;
 
-use crate::AppState;
 use schema::company::*;
 use schema::user::*;
 
@@ -38,17 +38,17 @@ pub struct Query(BaseQueries, UserQueries, CompanyQueries);
 
 pub type SafariSchema = Schema<Query, MutationRoot, EmptySubscription>;
 
-pub fn build_graphql_schema(app_state: AppState) -> SafariSchema {
+pub fn build_graphql_schema(conn: DatabaseConnection) -> SafariSchema {
     Schema::build(Query::default(), MutationRoot, EmptySubscription)
         .data(DataLoader::new(
-            BatchCompanyById(app_state.clone()),
+            BatchCompanyById::new(conn.clone()),
             tokio::spawn,
         ))
         .data(DataLoader::new(
-            BatchUsersByCompanyId(app_state.clone()),
+            BatchUsersByCompanyId::new(conn.clone()),
             tokio::spawn,
         ))
-        .data(app_state)
+        .data(conn)
         .finish()
 }
 
