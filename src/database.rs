@@ -14,6 +14,5 @@ pub async fn connect_to_database(connection_string: &str) -> Result<DatabaseConn
         .set_schema_search_path("public".into());
 
     let db = Database::connect(opt).await?;
-
     Ok(db)
 }

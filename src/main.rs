@@ -1,27 +1,32 @@
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 
 use axum::{routing::get, Extension, Router};
 use tower_http::cors::{Any, CorsLayer};
-use tracing_subscriber;
+use tracing_subscriber::{self, EnvFilter};
 
 use graphql::{build_graphql_schema, graphiql_handler, graphql_handler};
 
+mod config;
 mod database;
 mod entities;
 mod graphql;
 
 #[tokio::main]
 async fn main() {
-    dotenvy::dotenv().ok();
-
     tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::ERROR)
+        .with_env_filter(EnvFilter::from_default_env())
         .with_test_writer()
         .init();
 
-    let connection_string = std::env::var("DATABASE_URL").expect("DATABASE_URL is required");
+    let config = match crate::config::Config::build().await {
+        Ok(config) => Arc::new(config),
+        Err(e) => {
+            tracing::error!("{}", e);
+            panic!("Error reading config, exiting.");
+        }
+    };
 
-    let conn = database::connect_to_database(&connection_string)
+    let conn = database::connect_to_database(&config.database_url)
         .await
         .expect("Unable to connect to database!");
 

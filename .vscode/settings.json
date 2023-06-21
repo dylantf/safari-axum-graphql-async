@@ -8,5 +8,6 @@
     "**/Thumbs.db": true,
     "**/target": true
   },
-  "rust-analyzer.linkedProjects": ["./Cargo.toml", "./migration/Cargo.toml"]
+  "rust-analyzer.linkedProjects": ["./Cargo.toml", "./migration/Cargo.toml"],
+  "rust-analyzer.showUnlinkedFileNotification": false
 }
