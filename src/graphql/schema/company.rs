@@ -1,10 +1,11 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use async_graphql::dataloader::*;
 use async_graphql::*;
 use sea_orm::*;
 
 use crate::{
+    app_state::AppState,
     entities::{company, user},
     graphql::schema::user::BatchUsersByCompanyId,
 };
@@ -29,19 +30,19 @@ impl CompanyQueries {
         &self,
         ctx: &Context<'_>,
     ) -> Result<Vec<company::Model>, async_graphql::Error> {
-        let conn = ctx.data_unchecked::<DatabaseConnection>();
-        let companies = company::Entity::find().limit(10).all(conn).await?;
+        let app_state = ctx.data_unchecked::<Arc<AppState>>();
+        let companies = company::Entity::find().limit(10).all(&app_state.db).await?;
         Ok(companies)
     }
 }
 
 pub struct BatchCompanyById {
-    conn: DatabaseConnection,
+    app_state: Arc<AppState>,
 }
 
 impl BatchCompanyById {
-    pub fn new(conn: DatabaseConnection) -> Self {
-        Self { conn }
+    pub fn new(app_state: Arc<AppState>) -> Self {
+        Self { app_state }
     }
 }
 
@@ -53,7 +54,7 @@ impl Loader<i64> for BatchCompanyById {
     async fn load(&self, company_ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
         let companies = company::Entity::find()
             .filter(company::Column::Id.is_in(company_ids.to_owned()))
-            .all(&self.conn)
+            .all(&self.app_state.db)
             .await?
             .into_iter()
             .map(|c| (c.id, c))

@@ -1,64 +1,42 @@
-use async_graphql::{
-    dataloader::DataLoader, http::GraphiQLSource, EmptySubscription, MergedObject, Object, Schema,
-};
+use std::sync::Arc;
+
+use async_graphql::{dataloader::DataLoader, http::GraphiQLSource, EmptySubscription, Schema};
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
 use axum::{
     response::{self, IntoResponse},
     Extension,
 };
-use sea_orm::DatabaseConnection;
 
-use schema::company::*;
-use schema::user::*;
+use crate::app_state::AppState;
 
 mod schema;
 
-#[derive(Default)]
-pub struct BaseQueries;
-
-#[Object]
-impl BaseQueries {
-    pub async fn world(&self) -> String {
-        "world".to_owned()
-    }
-}
-
-#[derive(Default)]
-pub struct MutationRoot;
-
-#[Object]
-impl MutationRoot {
-    pub async fn goodbye(&self) -> String {
-        String::from("Goodbye!")
-    }
-}
-
-#[derive(Default, MergedObject)]
-pub struct Query(BaseQueries, UserQueries, CompanyQueries);
-
-pub type SafariSchema = Schema<Query, MutationRoot, EmptySubscription>;
-
-pub fn build_graphql_schema(conn: DatabaseConnection) -> SafariSchema {
-    Schema::build(Query::default(), MutationRoot, EmptySubscription)
-        .data(DataLoader::new(
-            BatchCompanyById::new(conn.clone()),
-            tokio::spawn,
-        ))
-        .data(DataLoader::new(
-            BatchUsersByCompanyId::new(conn.clone()),
-            tokio::spawn,
-        ))
-        .data(conn)
-        .finish()
-}
-
 pub async fn graphql_handler(
-    schema: Extension<SafariSchema>,
+    schema: Extension<schema::SafariSchema>,
     request: GraphQLRequest,
 ) -> GraphQLResponse {
     schema.execute(request.into_inner()).await.into()
 }
 
 pub async fn graphiql_handler() -> impl IntoResponse {
-    response::Html(GraphiQLSource::build().endpoint("/api/graphql").finish())
+    let graphiql = GraphiQLSource::build().endpoint("/api/graphql").finish();
+    response::Html(graphiql)
+}
+
+pub fn build_graphql_schema(app_state: Arc<AppState>) -> schema::SafariSchema {
+    Schema::build(
+        schema::Query::default(),
+        schema::MutationRoot,
+        EmptySubscription,
+    )
+    .data(DataLoader::new(
+        schema::company::BatchCompanyById::new(Arc::clone(&app_state)),
+        tokio::spawn,
+    ))
+    .data(DataLoader::new(
+        schema::user::BatchUsersByCompanyId::new(Arc::clone(&app_state)),
+        tokio::spawn,
+    ))
+    .data(Arc::clone(&app_state))
+    .finish()
 }

@@ -1,11 +1,12 @@
 use std::{net::SocketAddr, sync::Arc};
 
 use axum::{routing::get, Extension, Router};
-use tower_http::cors::{Any, CorsLayer};
-use tracing_subscriber::{self, EnvFilter};
-
 use graphql::{build_graphql_schema, graphiql_handler, graphql_handler};
+use tower_http::cors::{Any, CorsLayer};
 
+use crate::app_state::AppState;
+
+mod app_state;
 mod config;
 mod database;
 mod entities;
@@ -13,24 +14,26 @@ mod graphql;
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env())
-        .with_test_writer()
-        .init();
-
-    let config = match crate::config::Config::build().await {
-        Ok(config) => Arc::new(config),
+    let config = match crate::config::AppConfig::create().await {
+        Ok(config) => config,
         Err(e) => {
             tracing::error!("{}", e);
             panic!("Error reading config, exiting.");
         }
     };
 
-    let conn = database::connect_to_database(&config.database_url)
+    tracing_subscriber::fmt()
+        .with_max_level(config.log_level)
+        .with_test_writer()
+        .init();
+
+    let db = database::connect_to_database(&config.database_url)
         .await
         .expect("Unable to connect to database!");
 
-    let schema = build_graphql_schema(conn);
+    let app_state = Arc::new(AppState::create(config, db));
+
+    let schema = build_graphql_schema(app_state);
 
     let cors = CorsLayer::new().allow_origin(Any);
 
