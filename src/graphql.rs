@@ -9,7 +9,7 @@ use axum::{
 };
 
 use crate::app_state::AppState;
-use schema::{company::BatchCompanyById, user::BatchUsersByCompanyId};
+use schema::company::CompanyByIdBatcher;
 
 mod schema;
 
@@ -36,8 +36,8 @@ pub async fn graphql_handler(
 
     let gql_executor = request
         .into_inner()
-        .data(BatchCompanyById::new(&gql_context))
-        .data(BatchUsersByCompanyId::new(&gql_context));
+        .data(CompanyByIdBatcher::new(&gql_context));
+    // .data(BatchUsersByCompanyId::new(&gql_context));
 
     schema.execute(gql_executor).await.into()
 }

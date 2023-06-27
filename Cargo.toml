@@ -7,10 +7,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-async-graphql = { version = "5.0.10", features = ["chrono", "dataloader"] }
+async-graphql = { version = "5.0.10", features = ["chrono"] }
 async-graphql-axum = "5.0.10"
 axum = "0.6.18"
 chrono = "0.4.26"
+dataloader = "0.16.0"
 dotenvy = "0.15.7"
 log = "0.4.19"
 sea-orm = { version = "0.11.3", features = [
