@@ -7,7 +7,7 @@ use sea_orm::*;
 use crate::{
     app_state::AppState,
     entities::{company, user},
-    graphql::schema::company::BatchCompanyById,
+    graphql::{schema::company::BatchCompanyById, GqlContext},
 };
 
 #[ComplexObject]
@@ -35,12 +35,17 @@ impl UserQueries {
 }
 
 pub struct BatchUsersByCompanyId {
-    app_state: Arc<AppState>,
+    ctx: Arc<GqlContext>,
 }
 
 impl BatchUsersByCompanyId {
-    pub fn new(app_state: Arc<AppState>) -> Self {
-        Self { app_state }
+    pub fn new(ctx: &Arc<GqlContext>) -> DataLoader<Self> {
+        DataLoader::new(
+            Self {
+                ctx: Arc::clone(ctx),
+            },
+            tokio::spawn,
+        )
     }
 }
 
@@ -52,22 +57,21 @@ impl Loader<i64> for BatchUsersByCompanyId {
     async fn load(&self, company_ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
         let users = user::Entity::find()
             .filter(user::Column::CompanyId.is_in(company_ids.to_owned()))
-            .all(&self.app_state.db)
+            .all(&self.ctx.app_state.db)
             .await?;
 
-        let result: HashMap<i64, Self::Value> =
-            company_ids
-                .into_iter()
-                .fold(HashMap::new(), |mut acc, cid| {
-                    let company_users = users
-                        .iter()
-                        .filter(|u| u.company_id == *cid)
-                        .map(|u| u.to_owned())
-                        .collect::<Vec<user::Model>>();
+        let result = company_ids
+            .into_iter()
+            .map(|cid| {
+                let company_users = users
+                    .iter()
+                    .filter(|u| u.company_id == *cid)
+                    .map(|u| u.to_owned())
+                    .collect::<Vec<user::Model>>();
 
-                    acc.insert(*cid, company_users);
-                    acc
-                });
+                (*cid, company_users)
+            })
+            .collect::<HashMap<i64, Self::Value>>();
 
         Ok(result)
     }

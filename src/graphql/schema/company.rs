@@ -7,7 +7,7 @@ use sea_orm::*;
 use crate::{
     app_state::AppState,
     entities::{company, user},
-    graphql::schema::user::BatchUsersByCompanyId,
+    graphql::{schema::user::BatchUsersByCompanyId, GqlContext},
 };
 
 #[ComplexObject]
@@ -37,12 +37,17 @@ impl CompanyQueries {
 }
 
 pub struct BatchCompanyById {
-    app_state: Arc<AppState>,
+    ctx: Arc<GqlContext>,
 }
 
 impl BatchCompanyById {
-    pub fn new(app_state: Arc<AppState>) -> Self {
-        Self { app_state }
+    pub fn new(gql_context: &Arc<GqlContext>) -> DataLoader<Self> {
+        DataLoader::new(
+            Self {
+                ctx: Arc::clone(gql_context),
+            },
+            tokio::spawn,
+        )
     }
 }
 
@@ -54,7 +59,7 @@ impl Loader<i64> for BatchCompanyById {
     async fn load(&self, company_ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
         let companies = company::Entity::find()
             .filter(company::Column::Id.is_in(company_ids.to_owned()))
-            .all(&self.app_state.db)
+            .all(&self.ctx.app_state.db)
             .await?
             .into_iter()
             .map(|c| (c.id, c))

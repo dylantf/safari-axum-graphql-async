@@ -33,13 +33,14 @@ async fn main() {
 
     let app_state = Arc::new(AppState::create(config, db));
 
-    let schema = build_graphql_schema(app_state);
+    let schema = build_graphql_schema(Arc::clone(&app_state));
 
     let cors = CorsLayer::new().allow_origin(Any);
 
     let app = Router::new()
         .route("/api/healthcheck", get(|| async { "alive!" }))
         .route("/api/graphql", get(graphiql_handler).post(graphql_handler))
+        .layer(Extension(Arc::clone(&app_state)))
         .layer(Extension(schema))
         .layer(cors);
 
